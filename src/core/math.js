@@ -20,6 +20,7 @@ import {
   translate,
   scale as mat4_scale,
   identity,
+  invert,
   fromRotation,
   lookAt,
   targetTo
@@ -48,6 +49,7 @@ export const math = {
     translate,
     scale: mat4_scale,
     identity,
+    invert,
     from_rotation: fromRotation,
     look_at: lookAt,
     target_to: targetTo

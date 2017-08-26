@@ -7,10 +7,11 @@ class Entity {
   constructor(options = {}) {
     this.local_matrix = math.mat4.create();
     this.world_matrix = math.mat4.create();
+    this.world_to_local_matrix = math.mat4.create();
 
     this._local_scale = unit_vector.slice();
 
-    this.position = options.position || zero_vector.slice();
+    this.local_position = options.local_position || zero_vector.slice();
     this.local_scale = options.local_scale || unit_vector.slice();
     this.origin = options.origin || zero_vector.slice();
 
@@ -58,32 +59,46 @@ class Entity {
   }
 
   look_at(vec, up = this.up) {
-    math.mat4.target_to(this.local_matrix, this.position, vec, up);
+    math.mat4.target_to(this.local_matrix, this.local_position, vec, up);
   }
 
   get left() {
-    const out = this.local_matrix.slice(0, 3);
+    const out = this.world_matrix.slice(0, 3);
     return math.vec3.normalize(out, out);
   }
 
   get up() {
-    const out = this.local_matrix.slice(4, 7);
+    const out = this.world_matrix.slice(4, 7);
     return math.vec3.normalize(out, out);
   }
 
   get forward() {
-    const out = this.local_matrix.slice(8, 11);
+    const out = this.world_matrix.slice(8, 11);
     return math.vec3.normalize(out, out);
   }
 
+  set local_position(vec) {
+    const offset = zero_vector.slice();
+    math.vec3.subtract(offset, vec, this.local_position);
+    math.mat4.translate(this.local_matrix, this.local_matrix, offset);
+
+    math.vec3.transform_mat4(offset, offset, this.world_matrix);
+    math.mat4.translate(this.world_matrix, this.world_matrix, offset);
+  }
+
+  get local_position() {
+    return this.local_matrix.slice(12, 15);
+  }
+
   set position(vec) {
-    const offset = [];
+    const offset = zero_vector.slice();
     math.vec3.subtract(offset, vec, this.position);
+    math.vec3.transform_mat4(offset, offset, this.world_to_local_matrix);
     math.mat4.translate(this.local_matrix, this.local_matrix, offset);
   }
 
   get position() {
-    return this.local_matrix.slice(12, 15);
+    return this.world_matrix.slice(12, 15);
   }
 
   set local_scale(vec) {
@@ -126,9 +141,16 @@ class Entity {
   }
 
   get_view_matrix(out) {
-    const look_at_vect = [];
-    math.vec3.add(look_at_vect, this.position, this.forward);
-    math.mat4.look_at(out, this.position, look_at_vect, this.up);
+    const target = zero_vector.slice();
+    const local_forward = this.local_matrix.slice(8, 11);
+    math.vec3.normalize(local_forward, local_forward);
+    // const local_forward = zero_vector.slice();
+    // math.vec3.transform_mat4(
+    //   local_forward, this.forward, this.world_to_local_matrix
+    // );
+
+    math.vec3.add(target, this.local_position, local_forward);
+    math.mat4.look_at(out, this.local_position, target, this.up);
     return out;
   }
 
@@ -235,6 +257,10 @@ class Entity {
     } else {
       this.world_matrix = this.local_matrix.slice();
     }
+
+    math.mat4.invert(
+      this.world_to_local_matrix, this.world_matrix
+    );
 
     this.entities.forEach(entity => entity.update());
   }

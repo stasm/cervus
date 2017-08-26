@@ -10,18 +10,19 @@ const game = new Cervus.Game({
 
 // By default all entities face the user.
 // Rotate the camera to see the scene.
-game.camera.position = [0, 2, 4];
+game.camera.local_position = [0, 2, 4];
 game.camera.rotate_rl(Math.PI);
 
 const group = new Cervus.Entity({
   // local_scale: [2, 2, 2],
   local_scale: [1, 1, 1],
+  local_position: [0, 0, 0]
 });
 const cube = new Cervus.shapes.Box({
   material: Cervus.materials.phong,
   color: "#bada55",
   local_scale: [1, 1, 1],
-  position: [1, 0, 0]
+  local_position: [0, 0, 0]
 });
 group.add(cube);
 
